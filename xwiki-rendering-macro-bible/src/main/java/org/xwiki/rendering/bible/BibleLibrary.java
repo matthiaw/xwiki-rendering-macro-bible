@@ -71,6 +71,10 @@ public class BibleLibrary {
 
 		if (bibleAndVerse != null) {
 
+			if (!bibleAndVerse.contains("#")) {
+				return "Symbol # between Bible and Verse is missing";
+			}
+			
 			int index = bibleAndVerse.indexOf("#");
 			String initials = bibleAndVerse.substring(0, index);
 			String name = bibleAndVerse.substring(index + 1, bibleAndVerse.length());
