@@ -1,5 +1,11 @@
 package org.xwiki.rendering.bible;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -41,11 +47,10 @@ public class BibleLibrary
         // h.setLevel(java.util.logging.Level.OFF);
         // }
         try {
-//            org.apache.log4j.Logger.getLogger("org.springframework").setLevel(org.apache.log4j.Level.OFF);
-            java.util.logging.Logger.getLogger("org.crosswire").setLevel(
-                java.util.logging.Level.OFF);
-//            Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-//            root.setLevel(org.slf4j.Level.DEBUG); 
+            // org.apache.log4j.Logger.getLogger("org.springframework").setLevel(org.apache.log4j.Level.OFF);
+            java.util.logging.Logger.getLogger("org.crosswire").setLevel(java.util.logging.Level.OFF);
+            // Logger root = (Logger)LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+            // root.setLevel(org.slf4j.Level.DEBUG);
         } catch (Exception e) {
         }
 
@@ -129,40 +134,63 @@ public class BibleLibrary
         return initialsAPP2JSWORD.containsKey(initials);
     }
 
-    public static void initialize()
+    private static boolean isConnected()
     {
-        InstallManager imanager = new InstallManager();
+        boolean connected = false;
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
 
-        Map installers = imanager.getInstallers();
-        Iterator iter = installers.entrySet().iterator();
-        String name = null;
-        while (iter.hasNext()) {
-            Map.Entry mapEntry = (Map.Entry) iter.next();
-            name = (String) mapEntry.getKey();
-            Installer installer = (Installer) mapEntry.getValue();
-            System.out.println();
-            try {
-                installer.reloadBookList();
-                // installer.getBooks();
-                // installer.install(arg0);
-                for (Object bookObject : installer.getBooks()) {
-                    Book book = (Book) bookObject;
-
-                    if (initialsJSWORD2APP.containsKey(book.getInitials())) {
-                        if (Books.installed().getBook(book.getInitials()) == null) {
-                            installer.install(book);
-                            System.out.println("Install book '" + book.getInitials() + "'");
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface interf = interfaces.nextElement();
+                if (interf.isUp() && !interf.isLoopback()) {
+                    List<InterfaceAddress> adrs = interf.getInterfaceAddresses();
+                    for (Iterator<InterfaceAddress> iter = adrs.iterator(); iter.hasNext();) {
+                        InterfaceAddress adr = iter.next();
+                        InetAddress inadr = adr.getAddress();
+                        if (inadr instanceof Inet4Address) {
+                            connected = true;
                         }
                     }
                 }
+            }
 
-            } catch (InstallException e) {
-                e.printStackTrace();
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return connected;
+    }
+
+    public static void initialize()
+    {
+        if (isConnected()&&getBooks().size()==0) {
+//            System.out.println("Online (x Books): " + getBooks().size());
+
+            InstallManager imanager = new InstallManager();
+            Map installers = imanager.getInstallers();
+            Iterator iter = installers.entrySet().iterator();
+            String name = null;
+            while (iter.hasNext()) {
+                Map.Entry mapEntry = (Map.Entry) iter.next();
+                name = (String) mapEntry.getKey();
+                Installer installer = (Installer) mapEntry.getValue();
+                try {
+                    installer.reloadBookList();
+                    for (Object bookObject : installer.getBooks()) {
+                        Book book = (Book) bookObject;
+
+                        if (initialsJSWORD2APP.containsKey(book.getInitials())) {
+                            if (Books.installed().getBook(book.getInitials()) == null) {
+                                installer.install(book);
+                                System.out.println("Install book '" + book.getInitials() + "'");
+                            }
+                        }
+                    }
+
+                } catch (InstallException e) {
+                    e.printStackTrace();
+                }
             }
         }
-
-        // Books.installed().addBook(book);
-
     }
 
     private static class SimpleBookFilter implements BookFilter
