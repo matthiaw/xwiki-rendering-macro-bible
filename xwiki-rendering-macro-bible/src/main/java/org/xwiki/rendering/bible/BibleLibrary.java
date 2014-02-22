@@ -1,5 +1,6 @@
 package org.xwiki.rendering.bible;
 
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
@@ -9,6 +10,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.crosswire.jsword.book.Book;
@@ -22,8 +24,10 @@ import org.crosswire.jsword.book.install.InstallException;
 import org.crosswire.jsword.book.install.InstallManager;
 import org.crosswire.jsword.book.install.Installer;
 import org.crosswire.jsword.book.sword.ConfigEntryTable;
+import org.crosswire.jsword.index.IndexManagerFactory;
 import org.crosswire.jsword.passage.Key;
 import org.crosswire.jsword.passage.NoSuchKeyException;
+import org.crosswire.jsword.util.IndexDownloader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,8 +78,23 @@ public class BibleLibrary
         try {
             Key key = book.getKey(name);
             if (book.contains(key)) {
+                
+//                Locale def = Locale.getDefault();
+//                Locale.setDefault(Locale.ENGLISH);
+                
+//                IndexManagerFactory.getIndexManager().scheduleIndexCreation(book);
+                
                 BookData data = new BookData(book, key);
+//                System.out.println(data.getOsisFragment().getText());
+                
+//                Locale.setDefault(Locale.GERMAN);
+//                 data = new BookData(book, key);
+//                System.out.println(data.getOsisFragment().getText());
+                
                 String text = OSISUtil.getCanonicalText(data.getOsisFragment());
+                
+//                Locale.setDefault(def);
+                
                 return text;
             }
 
@@ -126,6 +145,7 @@ public class BibleLibrary
 
     public static Book getBook(String bookInitials)
     {
+//        Books.installed().getBook("").
         return Books.installed().getBook(initialsAPP2JSWORD.get(bookInitials));
     }
 
@@ -182,6 +202,22 @@ public class BibleLibrary
                             if (Books.installed().getBook(book.getInitials()) == null) {
                                 installer.install(book);
                                 System.out.println("Install book '" + book.getInitials() + "'");
+                                
+//                                try
+//                                {
+//                                    IndexDownloader.downloadIndex(book, installer);
+//                                    System.out.println("Install Index of book '" + book.getInitials() + "'");
+//                                }
+//                                catch (InstallException e)
+//                                {
+//                                }
+//                                catch (BookException e)
+//                                {
+//                                }
+//                                catch (IOException e)
+//                                {
+//                                }
+
                             }
                         }
                     }
@@ -190,6 +226,9 @@ public class BibleLibrary
                     e.printStackTrace();
                 }
             }
+            
+        } else {
+//            System.err.println("No Connection and no book installed.");
         }
     }
 
